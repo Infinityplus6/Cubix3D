@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cubix 3D - Rubik's Cube Simulator</title>
+  <meta name="description" content="Cubix 3D is an interactive 3D Rubik's Cube simulator featuring full movement notation support, custom algorithm sequence player, scramble generator, auto solver, and speedcubing timer.">
+  <link rel="icon" type="image/jpeg" href="favicon.jpg">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Import maps for Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+  <div class="bg-glow"></div>
+
+  <!-- UI Overlay -->
+  <div class="ui-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <img src="favicon.jpg" alt="Cubix 3D Logo" style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover; box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);" />
+        <h1>Cubix 3D</h1>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-box">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value" id="move-count">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="timer">00:00.0</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn active" id="sound-btn" title="Toggle Sound">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="help-btn" title="Keyboard Shortcuts">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+        <button class="icon-btn" id="reset-cam-btn" title="Reset Camera View">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Panels -->
+    <div class="main-body">
+      <!-- Left Side Panel (Scramble & History) -->
+      <div class="side-panel">
+        <div class="panel-title">
+          <span>Scramble</span>
+          <button class="btn btn-secondary" id="scramble-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Generate</button>
+        </div>
+        <div class="scramble-box" id="scramble-display">
+          Click Scramble to generate a 25-move sequence
+        </div>
+
+        <div class="panel-title" style="margin-top: 0.5rem;">
+          <span>Move History</span>
+          <button class="btn btn-secondary" id="clear-history-btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Clear</button>
+        </div>
+        <div class="history-log" id="history-log">
+          <!-- Executed moves will appear here -->
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+          <button class="btn btn-solve" id="auto-solve-btn" style="flex: 1;">⚡ Auto Solve</button>
+          <button class="btn btn-danger" id="reset-cube-btn" style="padding: 0.65rem 0.75rem;">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <footer class="app-controls">
+      <div class="controls-tabs">
+        <div class="tab-group" id="move-type-tabs">
+          <button class="tab-btn active" data-filter="all">All Moves</button>
+          <button class="tab-btn" data-filter="normal">Normal (N)</button>
+          <button class="tab-btn" data-filter="prime">Inverse (N')</button>
+          <button class="tab-btn" data-filter="double">Double (N2)</button>
+          <button class="tab-btn" data-filter="slice">Slices & Cube</button>
+        </div>
+
+        <div class="notation-player">
+          <input type="text" class="notation-input" id="notation-input" placeholder="Type sequence (e.g. R U R' U' F2)" />
+          <button class="btn" id="play-sequence-btn">Play</button>
+          <div class="speed-control">
+            <span>Speed</span>
+            <input type="range" id="speed-slider" min="1" max="5" value="3" step="1" title="Animation speed" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Moves Buttons Grid -->
+      <div class="moves-grid" id="moves-grid">
+        <!-- Generated dynamically in JS -->
+      </div>
+    </footer>
+  </div>
+
+  <!-- Help / Keyboard Modal -->
+  <div class="modal-backdrop" id="help-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Cubix 3D Controls & Shortcuts</h2>
+        <button class="icon-btn" id="close-modal-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>You can interact with the cube using your mouse or keyboard shortcuts:</p>
+        
+        <h3 style="color: var(--accent-secondary); font-size: 0.95rem; margin-top: 0.5rem;">Keyboard Controls (Singmaster / Speedcubing)</h3>
+        <div class="key-grid">
+          <div class="key-item"><span>Rotate Right (R / R')</span><span><kbd>I</kbd> / <kbd>K</kbd></span></div>
+          <div class="key-item"><span>Rotate Left (L / L')</span><span><kbd>D</kbd> / <kbd>E</kbd></span></div>
+          <div class="key-item"><span>Rotate Up (U / U')</span><span><kbd>J</kbd> / <kbd>F</kbd></span></div>
+          <div class="key-item"><span>Rotate Down (D / D')</span><span><kbd>S</kbd> / <kbd>L</kbd></span></div>
+          <div class="key-item"><span>Rotate Front (F / F')</span><span><kbd>H</kbd> / <kbd>G</kbd></span></div>
+          <div class="key-item"><span>Rotate Back (B / B')</span><span><kbd>W</kbd> / <kbd>O</kbd></span></div>
+          <div class="key-item"><span>Middle Slice (M / M')</span><span><kbd>M</kbd> / <kbd>N</kbd></span></div>
+          <div class="key-item"><span>Rotate Whole X (X / X')</span><span><kbd>X</kbd> / <kbd>Shift+X</kbd></span></div>
+          <div class="key-item"><span>Rotate Whole Y (Y / Y')</span><span><kbd>Y</kbd> / <kbd>Shift+Y</kbd></span></div>
+        </div>
+
+        <h3 style="color: var(--accent-secondary); font-size: 0.95rem; margin-top: 0.5rem;">Notation Guide</h3>
+        <p><strong>N</strong> = 90° Clockwise rotation</p>
+        <p><strong>N'</strong> = 90° Counter-Clockwise (Inverse) rotation</p>
+        <p><strong>N2</strong> = 180° Double rotation</p>
+        <p><strong>M, E, S</strong> = Middle slice rotations</p>
+        <p><strong>X, Y, Z</strong> = Rotate entire cube around X, Y, or Z axis</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Main Module -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
