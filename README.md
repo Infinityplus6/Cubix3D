@@ -1,10 +1,9 @@
 # Cubix 3D - Interactive 3D Rubik's Cube Simulator
 
-![Cubix 3D Favicon](favicon.jpg)
 
 **Cubix 3D** is a sleek, modern, web-based 3D Rubik's Cube simulator built using HTML5, CSS3, JavaScript (ES Modules), and Three.js. It features a full speedcubing movement notation suite (N, N', N2), custom algorithm sequence playback, an automated inverse solver, WCA scramble generation, automatic solve detection with timer tracking, and Web Audio API sound effects.
 
----
+Try it out <a href=https://cubix3d.vercel.app/>here</a>
 
 ## Key Features
 
